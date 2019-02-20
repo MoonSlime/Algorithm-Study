@@ -2,60 +2,49 @@
  * SCC(Strongly Connected Component)이해를 위한 코드.
  *
  * 처음부터 천천히 다시해보자......(아직안했음2019/02/10)
+ *
+ * 해결. 근데 이유는 아직 못찾음.
  */
 #include <stdio.h>
 #include <vector>
-#include <stack>
 #include <algorithm>
 
 #define MAX 10001
 
 using namespace std;
 
-int V, E, visit[MAX], vc=0;
+int V, E, vc=0, pos=0;
+int visit[MAX], scc[MAX], s[MAX];//s=stack
 vector<int> adj[MAX];//각 정점에 연결되어 있는 정점들. ex)adj[x]=y는 x->y를 의미.
 vector<vector<int> > SCC;
-stack<int> s;
-bool finished[MAX];
-
-bool less1(int a, int b) {
-    return a < b;
-}
-
-bool less2(vector<int> a,vector<int> b) {
-    return a[0] < b[0];
-}
 
 //scc를 구성하기 위한 dfs 함수.
 int dfs(int x) {
-    visit[x] = ++vc; 
-    s.push(x);
-    
-    int ret=0;
-    for (int i=0; i<adj[x].size(); ++i) {
-        if (visit[adj[x][i]]==0) {
-            ret = min(visit[x], dfs(adj[x][i]));
+    s[pos++]=x;
+
+    int ret = visit[x] = ++vc;
+    for (int y : adj[x]) {
+        if (visit[y]==0) {
+            ret = min(ret, dfs(y));
         }
-        else if (!finished[visit[adj[x][i]]]) {
-            ret = min(visit[x], visit[adj[x][i]]);
+        else if (!scc[y]) {
+            ret = min(ret, visit[y]);
         }
     }
 
     if (ret != visit[x])return ret;
 
+    int curSCC = SCC.size()+1;
     vector<int> newSCC;
-    while (s.top() != x) {
-        int tmp = s.top();
-        s.pop();
-        newSCC.push_back(tmp);
-        finished[tmp] = true;
+    while (true) {
+        int top = s[--pos];
+        newSCC.push_back(top);
+        scc[top]=curSCC;
+        if (top == x)break;
     }
-    newSCC.push_back(s.top());
-    s.pop();
-
-    sort(newSCC.begin(), newSCC.end(), less1);
-
+    sort(newSCC.begin(), newSCC.end());
     SCC.push_back(newSCC);
+    
     return MAX;
 }
 
@@ -72,7 +61,7 @@ int main(void) {
         if (visit[i] == 0)dfs(i);
     }
 
-    sort(SCC.begin(), SCC.end(), less2);
+    sort(SCC.begin(), SCC.end());
     printf("%d\n", (int)SCC.size());
     for (int i=0; i<SCC.size(); ++i) {
         vector<int> cur = SCC[i];
